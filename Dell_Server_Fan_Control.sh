@@ -10,7 +10,8 @@
 #
 # Requires:
 # ipmitool – apt install ipmitool
-# postfix and libsasl2-modules are required for email alerts - apt install postfix libsasl2-modules - this will need to be configured in order to send email alerts
+# postfix and libsasl2-modules - required for email alerts - apt install postfix libsasl2-modules - this will need to be configured in order to send email alerts
+# systemd for logging
 # ----------------------------------------------------------------------------------
 
 # Credential File location (This file should have 600 permissions and be stored in a location only root can access)
