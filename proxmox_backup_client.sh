@@ -65,7 +65,7 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 
 	if [[ $? == 0 ]]; then
 		printf -- "- The Proxmox Backup Server is reachable" | systemd-cat
-		_backups=($(proxmox-backup-client snapshots --output-format json-pretty --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore  | jq -r --arg host $_pbs_client '.[] | select(."backup-id" == "$host") | ."backup-time"'))
+		_backups=($(proxmox-backup-client snapshots --output-format json-pretty --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore  | jq -r --arg host $_pbs_client '.[] | select(."backup-id" == $host) | ."backup-time"'))
 		_sorted_backups=($(for i in "${_backups[@]}"; do echo $i; done | sort -n))
 		_epoch_last_backup=${_sorted_backups[-1]}
 		
