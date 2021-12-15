@@ -25,10 +25,6 @@ export PBS_PASSWORD=<GET THIS FROM YOUR PBS SERVER>
 export PBS_FINGERPRINT=<GET THIS FROM YOUR PBS SERVER>
 ###################################
 
-(
-  # Wait for lock on /var/lock/.proxmox-backup-script.exclusivelock (fd 200) for 10 seconds
-  flock -x -w 10 200 || exit 1
-
 # Check; not connected to a metered network
 # (See https://developer.gnome.org/NetworkManager/stable/nm-dbus-types.html#NMMetered)
 
@@ -95,5 +91,3 @@ else
 
 	printf -- "- The bandwidth on this network is probably metered" | systemd-cat
 fi
-
-) 200>/var/lock/.proxmox-backup-script.exclusivelock
