@@ -53,7 +53,6 @@ else
 fi
 }
 
-
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 	printf -- "- The bandwidth on this network is probably not metered" | systemd-cat
 
