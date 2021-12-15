@@ -56,7 +56,6 @@ else
 fi
 }
 
-#set -x
 
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 	printf -- "- The bandwidth on this network is probably not metered" | systemd-cat
@@ -66,8 +65,10 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 
 	if [[ $? == 0 ]]; then
 		printf -- "- The Proxmox Backup Server is reachable" | systemd-cat
-		_epoch_last_backup=$(proxmox-backup-client snapshots --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | grep $_pbs_client | jq '[ .[]."backup-time" ] | max')
-
+		_backups=($(proxmox-backup-client snapshots --output-format json-pretty --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore  | jq -r --arg host $_pbs_client '.[] | select(."backup-id" == "$host") | ."backup-time"'))
+		_sorted_backups=($(for i in "${_backups[@]}"; do echo $i; done | sort -n))
+		_epoch_last_backup=${_sorted_backups[-1]}
+		
 # Verify there there was a previous backup, and if so when
 		if [[ ! -z $_epoch_last_backup ]]; then
 			_seconds_elapsed_since_last_backup=$(($(date +%s)-$_epoch_last_backup))
@@ -75,11 +76,11 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 			run_backup
 
 		else
+
 			_epoch_last_backup=99999999
 			_seconds_elapsed_since_last_backup=$(($(date +%s)-$_epoch_last_backup))
 			printf -- "- There was no previous backup" | systemd-cat
 			run_backup
-
 		fi
 
 	else
@@ -91,4 +92,3 @@ else
 
 	printf -- "- The bandwidth on this network is probably metered" | systemd-cat
 fi
-#set +x
