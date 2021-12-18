@@ -29,7 +29,8 @@ _pbs_ip_address='X.X.X.X'
 _pbs_user='username@pbs!username-api'
 _pbs_datastore=''
 _pbs_client=$(hostname)
-_pbs_backup_dir=''
+# _pbs_backup_dir backs up root by default, change to the directory desired eg. /home
+_pbs_backup_dir='/'
 export PBS_PASSWORD=<GET THIS FROM YOUR PBS SERVER>
 export PBS_FINGERPRINT=<GET THIS FROM YOUR PBS SERVER>
 ###################################
@@ -44,7 +45,7 @@ function run_backup {
 if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
 	printf -- "- Starting the PBS backup" | systemd-cat
-	proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore
+	proxmox-backup-client backup $_pbs_backup_dir.pxar:$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore
 	printf -- "- PBS backup completed" | systemd-cat
 	printf -- "- $0 completed at `date`" | systemd-cat
 	
