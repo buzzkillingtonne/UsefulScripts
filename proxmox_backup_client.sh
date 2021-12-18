@@ -38,7 +38,7 @@ _metered_value=$(busctl get-property org.freedesktop.NetworkManager /org/freedes
 
 function run_backup {
 # Run the backup if the last backup is more than 24H old (86400 seconds)
-if [[ $_seconds_elapsed_since_last_backup -ge 86300 ]]; then
+if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
 	printf -- "- Starting the PBS backup" | systemd-cat
 	proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore
