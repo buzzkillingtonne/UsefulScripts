@@ -54,7 +54,7 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86300 ]]; then
 	mail -s "Proxmox Backup Client $_pbs_client status $_job_status"  $EMAIL <<< "$_last_backup_job_status"
 	printf -- "- $0 completed at `date`" | systemd-cat
 else
-	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400" | systemd-cat
+	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400, exiting" | systemd-cat
 fi
 }
 
@@ -78,12 +78,12 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 		else
 			_epoch_last_backup=99999999
 			_seconds_elapsed_since_last_backup=$(($(date +%s)-$_epoch_last_backup))
-			printf -- "- There was no previous backup" | systemd-cat
+			printf -- "- There probably was no previous backup - taking a fresh backup now" | systemd-cat
 			run_backup
 		fi
 	else
-		printf -- "- The Proxmox Backup Server is NOT reachable" | systemd-cat
+		printf -- "- The Proxmox Backup Server is NOT reachable, exiting" | systemd-cat
 	fi
 else
-	printf -- "- The bandwidth on this network is probably metered" | systemd-cat
+	printf -- "- The bandwidth on this network is probably metered, exiting" | systemd-cat
 fi
