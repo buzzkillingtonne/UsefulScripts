@@ -1,17 +1,19 @@
 #!/bin/bash
 
-### Depedencies ########################################
-# proxmox-backup-client                                #
-# postfix                                              #
-# libsasl2-modules (on debian)                         #
-# jq (to parse the json output of snapshots)           #
-#                                                      #
-# PBS_PASSWORD must be exported in:                    #
-#   ~/.bashrc (to be run by user)                      #
-#   ~/.bash_profile (to be run by cron with "bash -l") #
-# In this script I've exported it manually and cleared #
-# the variable at the end                              #
-########################################################
+### Depedencies #########################################
+# proxmox-backup-client					#
+# postfix (for email alerts)				#
+# libsasl2-modules (on debian, needed for sasl hash)	#
+# jq (to parse the json output of snapshots and email	#
+# info)							#
+# awk (parsing information for email)			#
+#							#
+# PBS_PASSWORD must be exported in:			#
+#   ~/.bashrc (to be run by user)			#
+#   ~/.bash_profile (to be run by cron with "bash -l")	#
+# In this script I've exported it manually and cleared	#
+# the variable at the end				#
+#########################################################
 
 ### Settings ######################
 EMAIL='address@example.com'
