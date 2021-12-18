@@ -12,8 +12,13 @@
 #   ~/.bashrc (to be run by user)			#
 #   ~/.bash_profile (to be run by cron with "bash -l")	#
 # In this script I've exported it manually and cleared	#
-# the variable at the end				#
+# the variable at the end, i found this to be easier	#
+# and more reliable when running in a cron job		#
 #########################################################
+
+#
+## I have designed this script to run every minute in a cron job, this is not the best, but it works fine.
+#
 
 ### Settings ######################
 EMAIL='address@example.com'
