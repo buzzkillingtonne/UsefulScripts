@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## I would like to thenk Turnicus on the proxmox forums for creating the basis of this script:
+## I would like to thank Turnicus on the proxmox forums for creating the basis of this script:
 ## https://forum.proxmox.com/threads/proxmox-backup-client-bash-script-for-automated-backups-of-laptop.78358/
 
 ### Depedencies #########################################
