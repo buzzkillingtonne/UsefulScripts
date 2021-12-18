@@ -39,7 +39,7 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86300 ]]; then
 	printf -- "- PBS backup completed" | systemd-cat
 	printf -- "- $0 completed at `date`" | systemd-cat
 	printf -- "- Gathering information for email" | systemd-cat
-	_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq '[ .[]."upid"|tostring ]' | grep backup | cut -c4- | rev | cut -c24- | rev | tr -s '\\' '\\')
+	_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r '[ .[]."upid" ]' | grep backup | tr -d '"''  ' | tr -s '\\' '\\'  | awk -F 'x2ddesktop:' '{print $1"x2ddesktop:"}')
 	_last_backup_job_status=$(proxmox-backup-client task log $_backup_upid$_pbs_user_upid: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore)
 	_job_status=$(proxmox-backup-client task log $_backup_upid$_pbs_user_upid: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | tail -1)
 	printf -- "- Clearing enviroment variables" | systemd-cat
