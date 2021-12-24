@@ -46,24 +46,23 @@ function run_backup {
 if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
 	printf -- "- Starting the PBS backup" | systemd-cat
-	proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore
-	if [[ $? == 0  ]]; then
+	if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
 		printf -- "- PBS backup completed" | systemd-cat
-		printf -- "- $0 completed at `date`" | systemd-cat
+		printf -- "- $0 completed at $(date)" | systemd-cat
 		
 		printf -- "- Gathering information for email" | systemd-cat
 # This must be the the for of 'UPID:yourpbdserverhostname:0002A09D:0AEE0BA0:0000049B:61BD33FA:backup:yourbackuprepositoryname\x3ahost-yourpbsusername\x2ddesktop:' without quotes
 # It is important that backup jobs for different computers use different pbs user names and api's, this script finds the backup to report on based on the last backup taken with that username.
 		_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r '[ .[]."upid" ]' | grep backup | tr -d '"''  ' | tr -s '\\' '\\'  | awk -F 'x2ddesktop:' '{print $1"x2ddesktop:"}')
-		_last_backup_job_status=$(proxmox-backup-client task log $_backup_upid$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore)
-		_job_status=$(proxmox-backup-client task log $_backup_upid$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | tail -1)
+		_last_backup_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore)
+		_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | tail -1)
 		
 		printf -- "- Clearing enviroment variables" | systemd-cat
-		export PBS_PASSWORD=
-		export PBS_FINGERPRINT=
+		unset PBS_PASSWORD
+		unset PBS_FINGERPRINT
 		printf -- "- Sending email" | systemd-cat
 		mail -s "Proxmox Backup Client $_pbs_client status $_job_status"  $EMAIL <<< "$_last_backup_job_status"
-		printf -- "- $0 completed at `date`" | systemd-cat
+		printf -- "- $0 completed at $(date)" | systemd-cat
 	else
 		printf -- "- proxmox-backup-client failed with exit status $?"
 	fi
@@ -73,32 +72,33 @@ else
 fi
 }
 
+
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 	printf -- "- The bandwidth on this network is probably not metered" | systemd-cat
 
 # Check that the PBS server is pingable
-	ping $_pbs_ip_address -c 1 > /dev/null 2>&1
-
-	if [[ $? == 0 ]]; then
+	if ping $_pbs_ip_address -c 1 > /dev/null 2>&1; then
 		printf -- "- The Proxmox Backup Server is reachable" | systemd-cat
-		_backups=($(proxmox-backup-client snapshots --output-format json-pretty --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore  | jq -r --arg host $_pbs_client '.[] | select(."backup-id" == $host) | ."backup-time"'))
-		_sorted_backups=($(for i in "${_backups[@]}"; do echo $i; done | sort -n))
+		_backups=($(proxmox-backup-client snapshots --output-format json-pretty --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r --arg host $(hostname) '.[] | select(."backup-id" == $host) | ."backup-time"'))
+		_sorted_backups=($(for i in "${_backups[@]}"; do echo "$i"; done | sort -n))
 		_epoch_last_backup=${_sorted_backups[-1]}
-		
+
 # Verify there there was a previous backup, and if so when
-		if [[ ! -z $_epoch_last_backup ]]; then
-			_seconds_elapsed_since_last_backup=$(($(date +%s)-$_epoch_last_backup))
-			printf -- "- The last backup was received on $(date -d @$_epoch_last_backup) ($_seconds_elapsed_since_last_backup seconds ago)" | systemd-cat
+		if [[ -n $_epoch_last_backup ]]; then
+			_seconds_elapsed_since_last_backup=$(($(date +%s)-_epoch_last_backup))
+			printf -- "- The last backup was received on $(date -d @"$_epoch_last_backup") ($_seconds_elapsed_since_last_backup seconds ago)" | systemd-cat
 			run_backup
 		else
 			_epoch_last_backup=99999999
-			_seconds_elapsed_since_last_backup=$(($(date +%s)-$_epoch_last_backup))
+			_seconds_elapsed_since_last_backup=$(($(date +%s)-_epoch_last_backup))
 			printf -- "- There probably was no previous backup - taking a fresh backup now" | systemd-cat
 			run_backup
 		fi
+
 	else
-		printf -- "- The Proxmox Backup Server is NOT reachable, exiting" | systemd-cat
+    		printf -- "- The Proxmox Backup Server is NOT reachable, exiting" | systemd-cat
 	fi
 else
+
 	printf -- "- The bandwidth on this network is probably metered, exiting" | systemd-cat
 fi
