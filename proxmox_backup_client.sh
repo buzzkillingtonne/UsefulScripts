@@ -54,7 +54,7 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 # This must be the the for of 'UPID:yourpbdserverhostname:0002A09D:0AEE0BA0:0000049B:61BD33FA:backup:yourbackuprepositoryname\x3ahost-yourpbsusername\x2ddesktop:' without quotes
 # It is important that backup jobs for different computers use different pbs user names and api's, this script finds the backup to report on based on the last backup taken with that username.
 		_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r '[ .[]."upid" ]' | grep backup | tr -d '"''  ' | tr -s '\\' '\\'  | awk -F 'x2ddesktop:' '{print $1"x2ddesktop:"}')
-		_last_backup_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | tail -14)
+		_last_backup_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | grep -v 'successfully added chunk\|dynamic_append 128 chunks\|PUT /dynamic_index\|upload_chunk done:\|POST /dynamic_chunk\|dynamic_append\|GET\|POST')
 		_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | tail -1)
 		
 		printf -- "- Clearing enviroment variables" | systemd-cat
@@ -65,6 +65,7 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 		printf -- "- $0 completed at $(date)" | systemd-cat
 	else
 		printf -- "- proxmox-backup-client failed with exit status $?"
+		mail -s "Proxmox Backup Client $_pbs_client status TASK FAILED"  $EMAIL <<< "Backup job failed, check the task log manually for more information"
 	fi
 		
 else
