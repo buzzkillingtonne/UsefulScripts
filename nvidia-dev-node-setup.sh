@@ -1,8 +1,6 @@
 #!/bin/bash
 # Thanks to https://www.reddit.com/r/jellyfin/comments/cig9kh/nvidia_quadro_p400_passthrough_on_proxmox/
 # Create this script in a directory such as /root/boot-scripts/ and add to a cronjob in /etc/cron.d/ to run @reboot
-# Ensure in /etc/modules that the VFIO kernel modules are listed before the nvidia modules, ideally the nvidia modules should be in their own file unter /etc/module-load.d/nvidia.conf.
-# This will ensure that the selected PCI GPU in this script will get the vfio drivers, and the other PCI GPU of the same model will get the nvidia drivers applied
 
 /sbin/modprobe nvidia
 
