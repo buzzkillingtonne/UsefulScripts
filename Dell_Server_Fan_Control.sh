@@ -28,44 +28,47 @@ IPMIUSER=root
 IPMIPW=$(cat "$FILE")
 IPMIEK=0000000000000000000000000000000000000000
 
-# SETFAN is hex for the fan speed to be manually set. 15 is close to default. 09 is about 1920 RPM which is fairly silent.
-SETFAN=09
-FANTHRESHOLD=2000
+# SETFAN is hex for the fan speed to be manually set. On the Dell R710 15 is close to default. 09 is about 1920 RPM which is fairly silent.
+# On the R720 13 is about 3800 RPM and is resonably silent
+SETFAN=13
+FANTHRESHOLD=3900
 
 # TEMPERATURE
 # Change this to the temperature in celcius you are comfortable with.
 # If the temperature goes above the set THRESHOLD it will send raw IPMI command to enable dynamic fan control.
 # If the temperature goes below the set THRESHOLD it will check fan speed and send raw IPMI command to enable manual fan control at 1920rpm.
 
-# CPU Threshold in °C (Used for Dell R720 typically)
-#THRESHOLD=60
+# CPU Threshold in °C (Used for Dell R720)
+THRESHOLD=70
 
-# Ambient Threshold in °C (Used for Dell R710 typically)
-THRESHOLD=30
+# Ambient Threshold in °C (Used for Dell R710)
+#THRESHOLD=30
 
+### R720 settings
 # Get the average temp of both CPU's (not all cores combined, only the packages)
-# Comment these lines out if using exhaust or ambient temp and uncomment CPU Temp
-#
 #TEMParray=( $(sensors -u | grep -A 1 -i "Package id" | grep -i "_input:" | grep -Po '\d{2}.\d{1}' | cut -b -2) )
 #CPUPACKAGES=$(echo "${#TEMParray[@]}")
 #TEMPTOTAL=$(sensors -u | grep -A 1 -i "Package id" | grep -i "_input:" | grep -Po '\d{2}.\d{1}' | cut -b -2 | paste -sd+ | bc)
 #TEMP=$(expr $TEMPTOTAL / $CPUPACKAGES)
-
-# This variable sends a IPMI command to get the temperature, and outputs it as two digits.
-# Dell R710 ambient temp
-TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type temperature | grep "Ambient" | grep -Po '\d{2}' | tail -1)
 #
-# Dell R720 Exhaust Temp
+# Dell R720 Exhaust Temp (if you want to go off of exhaust temp)
 #TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type temperature | grep "Exhaust Temp" | grep -Po '\d{2}' | tail -1)
-
-
-# This variable sends a IPMI command to get the fan speed, and outputs it as four digits. R710 and R720 use different naming conventions.
-# Dell R710 Fan Name
-FANSPEED=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type Fan | grep 'FAN 1 RPM' | grep -Po '\d{4}' | tail -1)
+#
+# Get the temp of the hottest CPU and use that as the $TEMP
+TEMP=( $(sensors -u | grep -A 1 -i "Package id" | grep -i "_input:" | grep -Po '\d{2}.\d{1}' | cut -b -2 | sort -nr | head -n1) )
 #
 # Dell R720 Fan Name
-#FANSPEED=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type Fan | grep 'Fan1' | grep -Po '\d{4}' | tail -1)
+FANSPEED=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type Fan | grep 'Fan1' | grep -Po '\d{4}' | tail -1)
 
+
+### R710 settings
+# This variable sends a IPMI command to get the temperature, and outputs it as two digits.
+# Dell R710 ambient temp
+#TEMP=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type temperature | grep "Ambient" | grep -Po '\d{2}' | tail -1)
+#
+# This variable sends a IPMI command to get the fan speed, and outputs it as four digits. R710 and R720 use different naming conventions.
+# Dell R710 Fan Name
+#FANSPEED=$(ipmitool -I lanplus -H $IPMIHOST -U $IPMIUSER -P $IPMIPW -y $IPMIEK sdr type Fan | grep 'FAN 1 RPM' | grep -Po '\d{4}' | tail -1)
 
 
 if [[ $TEMP -gt $THRESHOLD ]]; then
@@ -94,4 +97,3 @@ elif [[ $TEMP -lt $THRESHOLD ]]; then
     fi
 
 fi
-
