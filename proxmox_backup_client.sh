@@ -1,6 +1,6 @@
 #!/bin/bash
 
-## I would like to thank Turnicus on the proxmox forums for creating the basis of this script:
+## I would like to thank Turnicus on the Proxmox forums for creating the basis of this script:
 ## https://forum.proxmox.com/threads/proxmox-backup-client-bash-script-for-automated-backups-of-laptop.78358/
 
 ### Depedencies #########################################
@@ -20,7 +20,7 @@
 #########################################################
 
 #
-## I have designed this script to run every minute in a cron job, this is not the best, but it works fine.
+## I have designed this script to run every minute in a cron job, this is not the best, but it works fine. It can however get spammy when there are failures.
 #
 
 ### Settings ######################
@@ -49,7 +49,6 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 	if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
 		printf -- "- PBS backup completed" | systemd-cat
 		printf -- "- $0 completed at $(date)" | systemd-cat
-		
 		printf -- "- Gathering information for email" | systemd-cat
 # This must be the the for of 'UPID:yourpbdserverhostname:0002A09D:0AEE0BA0:0000049B:61BD33FA:backup:yourbackuprepositoryname\x3ahost-yourpbsusername\x2ddesktop:' without quotes
 # It is important that backup jobs for different computers use different pbs user names and api's, this script finds the backup to report on based on the last backup taken with that username.
@@ -100,6 +99,5 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
     		printf -- "- The Proxmox Backup Server is NOT reachable, exiting" | systemd-cat
 	fi
 else
-
 	printf -- "- The bandwidth on this network is probably metered, exiting" | systemd-cat
 fi
