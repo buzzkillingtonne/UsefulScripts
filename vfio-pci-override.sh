@@ -2,7 +2,7 @@
 # Ensure in /etc/modules that the VFIO kernel modules are listed before the nvidia modules, ideally the nvidia modules should be in their own file unter /etc/module-load.d/nvidia.conf.
 # This will ensure that the selected PCI GPU in this script will get the vfio drivers, and the other PCI GPU of the same model will get the nvidia drivers applied
 # Place this script in /usr/bin/vfio-pci-override.sh and call it in /etc/moprobe.d/vfio.conf with the line install vfio-pci /usr/bin/vfio-pci-override.sh
-# if needed, add to initramfs /etc/initramfs-tools/hooks/ (in Debian based systems)
+# if needed, add to initramfs /etc/initramfs-tools/hooks/ (in Debian based systems) without the .sh file extension: https://manpages.ubuntu.com/manpages/xenial/man8/initramfs-tools.8.html
 
 DEVS="0000:42:00.0"
 
