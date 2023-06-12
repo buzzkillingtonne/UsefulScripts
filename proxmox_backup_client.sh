@@ -73,7 +73,7 @@ function run_backup {
 }
 
 function retry_backup {
-# retry running the backup up to 2 more times before failing and sending an email
+# Retry running the backup up to 2 more times before failing and sending an email
 
 while [ $retry -lt 3 ]; do
 	run_backup
@@ -85,7 +85,9 @@ if [[ $retry -ge 3 ]]; then
 fi
 }
 
+# Set the retry counter
 retry=0
+
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 	printf -- "- The bandwidth on this network is probably not metered" | systemd-cat
 
