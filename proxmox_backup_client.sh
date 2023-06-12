@@ -45,28 +45,28 @@ function run_backup {
 # Run the backup if the last backup is more than 24H old (86400 seconds)
 #if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
-	printf -- "- Starting the PBS backup" | systemd-cat
-	if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
-		printf -- "- PBS backup completed" | systemd-cat
-		printf -- "- $0 completed at $(date)" | systemd-cat
-		printf -- "- Gathering information for email" | systemd-cat
+printf -- "- Starting the PBS backup" | systemd-cat
+if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
+	printf -- "- PBS backup completed" | systemd-cat
+	printf -- "- $0 completed at $(date)" | systemd-cat
+	printf -- "- Gathering information for email" | systemd-cat
 # This must be the the for of 'UPID:yourpbdserverhostname:0002A09D:0AEE0BA0:0000049B:61BD33FA:backup:yourbackuprepositoryname\x3ahost-yourpbsusername\x2ddesktop:' without quotes
 # It is important that backup jobs for different computers use different pbs user names and api's, this script finds the backup to report on based on the last backup taken with that username.
-		_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r '[ .[]."upid" ]' | grep backup | tr -d '"''  ' | tr -s '\\' '\\'  | awk -F 'x2ddesktop:' '{print $1"x2ddesktop:"}')
-		_last_backup_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | grep -v 'successfully added chunk\|dynamic_append 128 chunks\|PUT /dynamic_index\|upload_chunk done:\|POST /dynamic_chunk\|dynamic_append\|GET\|POST')
-		_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | tail -1)
+	_backup_upid=$(proxmox-backup-client task list --all --limit 2 --output-format json --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore | jq -r '[ .[]."upid" ]' | grep backup | tr -d '"''  ' | tr -s '\\' '\\'  | awk -F 'x2ddesktop:' '{print $1"x2ddesktop:"}')
+	_last_backup_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | grep -v 'successfully added chunk\|dynamic_append 128 chunks\|PUT /dynamic_index\|upload_chunk done:\|POST /dynamic_chunk\|dynamic_append\|GET\|POST')
+	_job_status=$(proxmox-backup-client task log "$_backup_upid"$_pbs_user: --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore 2>&1 | tail -1)
 		
-		printf -- "- Clearing enviroment variables" | systemd-cat
-		unset PBS_PASSWORD
-		unset PBS_FINGERPRINT
-		printf -- "- Sending email" | systemd-cat
-		mail -s "Proxmox Backup Client $_pbs_client status $_job_status"  $EMAIL <<< "$_last_backup_job_status"
-		printf -- "- $0 completed at $(date)" | systemd-cat
-	else
-		sleep
-		retry=$(($retry+1))
-		retry_backup
-	fi		
+	printf -- "- Clearing enviroment variables" | systemd-cat
+	unset PBS_PASSWORD
+	unset PBS_FINGERPRINT
+	printf -- "- Sending email" | systemd-cat
+	mail -s "Proxmox Backup Client $_pbs_client status $_job_status"  $EMAIL <<< "$_last_backup_job_status"
+	printf -- "- $0 completed at $(date)" | systemd-cat
+else
+	sleep 300
+	retry=$(($retry+1))
+	retry_backup
+fi		
 #else
 #	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400, exiting" | systemd-cat
 #fi
@@ -74,10 +74,12 @@ function run_backup {
 
 function retry_backup {
 # Retry running the backup up to 2 more times before failing and sending an email
-
 while [ $retry -lt 3 ]; do
 	run_backup
 done
+}
+
+function backup_failure_notification {
 
 if [[ $retry -ge 3 ]]; then
 	printf -- "- proxmox-backup-client failed with exit status $?"
@@ -85,7 +87,7 @@ if [[ $retry -ge 3 ]]; then
 fi
 }
 
-# Set the retry counter
+# set the retry counter
 retry=0
 
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
@@ -103,11 +105,13 @@ if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 			_seconds_elapsed_since_last_backup=$(($(date +%s)-_epoch_last_backup))
 			printf -- "- The last backup was received on $(date -d @"$_epoch_last_backup") ($_seconds_elapsed_since_last_backup seconds ago)" | systemd-cat
 			run_backup
+			backup_failure_notification
 		else
 			_epoch_last_backup=99999999
 			_seconds_elapsed_since_last_backup=$(($(date +%s)-_epoch_last_backup))
 			printf -- "- There probably was no previous backup - taking a fresh backup now" | systemd-cat
 			run_backup
+			backup_failure_notification
 		fi
 
 	else
