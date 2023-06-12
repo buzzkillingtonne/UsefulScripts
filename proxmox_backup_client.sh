@@ -43,7 +43,7 @@ _metered_value=$(busctl get-property org.freedesktop.NetworkManager /org/freedes
 
 function run_backup {
 # Run the backup if the last backup is more than 24H old (86400 seconds)
-if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
+#if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
 	printf -- "- Starting the PBS backup" | systemd-cat
 	if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
@@ -63,16 +63,29 @@ if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 		mail -s "Proxmox Backup Client $_pbs_client status $_job_status"  $EMAIL <<< "$_last_backup_job_status"
 		printf -- "- $0 completed at $(date)" | systemd-cat
 	else
-		printf -- "- proxmox-backup-client failed with exit status $?"
-		mail -s "Proxmox Backup Client $_pbs_client status TASK FAILED"  $EMAIL <<< "Backup job failed, check the task log manually for more information"
-	fi
-		
-else
-	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400, exiting" | systemd-cat
+		sleep
+		retry=$(($retry+1))
+		retry_backup
+	fi		
+#else
+#	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400, exiting" | systemd-cat
+#fi
+}
+
+function retry_backup {
+# retry running the backup up to 2 more times before failing and sending an email
+
+while [ $retry -lt 3 ]; do
+	run_backup
+done
+
+if [[ $retry -ge 3 ]]; then
+	printf -- "- proxmox-backup-client failed with exit status $?"
+	mail -s "Proxmox Backup Client $_pbs_client status TASK FAILED after three retries"  $EMAIL <<< "Backup job failed, check the task log manually for more information"
 fi
 }
 
-
+retry=0
 if [[ "$_metered_value" == "u 4" ]] || [[ "$_metered_value" == "u 2" ]]; then
 	printf -- "- The bandwidth on this network is probably not metered" | systemd-cat
 
