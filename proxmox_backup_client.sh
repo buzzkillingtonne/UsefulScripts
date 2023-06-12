@@ -42,8 +42,6 @@ export PBS_FINGERPRINT=<GET THIS FROM YOUR PBS SERVER>
 _metered_value=$(busctl get-property org.freedesktop.NetworkManager /org/freedesktop/NetworkManager org.freedesktop.NetworkManager Metered)
 
 function run_backup {
-# Run the backup if the last backup is more than 24H old (86400 seconds)
-#if [[ $_seconds_elapsed_since_last_backup -ge 86400 ]]; then
 
 printf -- "- Starting the PBS backup" | systemd-cat
 if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --repository $_pbs_user@$_pbs_ip_address:$_pbs_datastore; then
@@ -65,19 +63,14 @@ if proxmox-backup-client backup $_pbs_backup_dir.pxar:/$_pbs_backup_dir --reposi
 else
 	sleep 300
 	retry=$(($retry+1))
-	retry_backup
+	# Retry running the backup up to 2 more times before failing and sending an email
+	while [ $retry -lt 3 ]; do
+		run_backup
+	done
 fi		
-#else
-#	printf -- "- $_seconds_elapsed_since_last_backup seconds elapsed since last backup, must be greater than 86400, exiting" | systemd-cat
-#fi
+
 }
 
-function retry_backup {
-# Retry running the backup up to 2 more times before failing and sending an email
-while [ $retry -lt 3 ]; do
-	run_backup
-done
-}
 
 function backup_failure_notification {
 
