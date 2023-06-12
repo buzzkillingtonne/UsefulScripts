@@ -20,7 +20,7 @@
 #########################################################
 
 #
-## I have designed this script to run every minute in a cron job, this is not the best, but it works fine. It can however get spammy when there are failures.
+## I have designed this script to run once per day and retry when there are failures. This allows the script to also be exectuted manually.
 #
 
 ### Settings ######################
