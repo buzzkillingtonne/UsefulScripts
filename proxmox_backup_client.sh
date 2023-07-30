@@ -5,7 +5,7 @@
 
 ### Depedencies #########################################
 # proxmox-backup-client					#
-# postfix (for email alerts)				#
+# postfix (for email alerts daemon must be enabled)	#
 # libsasl2-modules (on debian, needed for sasl hash)	#
 # jq (to parse the json output of snapshots and email	#
 # info)							#
